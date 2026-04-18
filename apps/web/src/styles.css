@@ -1138,6 +1138,55 @@ button.secondary.danger:hover:not(:disabled) {
   border: 1px solid rgba(255, 255, 255, 0.92);
 }
 
+/* 加大拖角/拖边命中区（触控 + 桌面） */
+.crop-stage--free .ReactCrop {
+  --rc-drag-handle-size: 20px;
+  --rc-drag-handle-mobile-size: 40px;
+  --rc-drag-bar-size: 20px;
+  --rc-border-color: rgba(255, 255, 255, 0.95);
+}
+
+.crop-inset-panel {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem 0.35rem;
+  border-top: 1px solid var(--rule);
+  background: #fafbfc;
+}
+
+.crop-inset-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.crop-inset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 0.65rem;
+}
+
+.crop-inset-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+.crop-inset-cell span {
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.crop-inset-cell input[type="range"] {
+  width: 100%;
+  margin: 0;
+  min-height: 2rem;
+  touch-action: manipulation;
+}
+
 .crop-error {
   margin: 0;
   padding: 0.35rem 1rem;
