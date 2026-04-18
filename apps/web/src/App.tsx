@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ImageCropDialog } from "./ImageCropDialog";
 
 const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/i;
 
@@ -29,6 +30,16 @@ function mergeImageFiles(prev: File[], more: File[]): File[] {
   }
   return Array.from(map.values()).slice(0, 10);
 }
+
+function fileDedupeKey(f: File): string {
+  return `${f.name}-${f.size}`;
+}
+
+type ImageCropSession = {
+  mode: "replace" | "append";
+  baseFiles: File[];
+  croppedNew: File[];
+};
 
 type IngestKind = "image" | "text" | "document";
 
@@ -192,8 +203,9 @@ function formatNetworkError(err: unknown): string {
   if (isNetwork) {
     return [
       "无法连接后端（请求未到达 API，与模型 API Key 无关）。",
-      "请依次确认：① 终端里已运行 npm run dev:server 或 npm run dev，且后端日志出现 listening；② 浏览器地址是 http://localhost:5173（或 Vite 提示的地址），不要 file:// 打开文件；③ 若改过 apps/server/.env 里的 PORT，启动前端时终端应打印 [vite] /api -> http://127.0.0.1:你的端口，不对则设置环境变量 VITE_API_PROXY。",
-      "前后端不同域部署时，构建前端前设置 VITE_API_BASE 为后端根地址。",
+      `本页使用的 API 根路径为「${apiBase}」（相对当前站点同源；子路径部署时应为 /前缀/api）。`,
+      "【本地】已运行 npm run dev（或同时起 server + web）；浏览器用 http://localhost:5173 等 Vite 地址，勿用 file://；改过 apps/server/.env 的 PORT 时，前端终端应出现 [vite] /api -> 对应端口，否则设置环境变量 VITE_API_PROXY。",
+      "【服务器】Nginx 是否已配置 location /api/（或子路径下的 /xxx/api/）并反代到本机 Node；pm2/node 是否在跑且端口与反代一致；云安全组/防火墙是否放行。前后端不同源时，构建前端前设置 VITE_API_BASE 为完整 API 根地址（如 https://api.example.com）。",
     ].join("");
   }
   return msg;
@@ -259,6 +271,14 @@ export function App(): JSX.Element {
   const [llmModelPresets, setLlmModelPresets] = useState<LlmModelPresets | null>(null);
   const [text, setText] = useState("");
   const [pickedFiles, setPickedFiles] = useState<File[]>([]);
+  /** 多图裁切队列；队首在 `ImageCropDialog` 中展示 */
+  const [cropQueue, setCropQueue] = useState<File[]>([]);
+  /** 从已选列表点「裁切」替换该文件时非 null */
+  const [reEditKey, setReEditKey] = useState<string | null>(null);
+  const cropSessionRef = useRef<ImageCropSession | null>(null);
+  const [cropBeforeUpload, setCropBeforeUpload] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 900px)").matches : true
+  );
   const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -276,8 +296,40 @@ export function App(): JSX.Element {
 
   const activeFlowRef = useRef<HTMLElement | null>(null);
 
+  const finalizeCropSession = useCallback(() => {
+    const s = cropSessionRef.current;
+    if (!s) return;
+    cropSessionRef.current = null;
+    if (s.mode === "replace") {
+      setPickedFiles(mergeImageFiles([], s.croppedNew));
+    } else {
+      setPickedFiles(mergeImageFiles(s.baseFiles, s.croppedNew));
+    }
+  }, []);
+
+  const pushCropOutput = useCallback(
+    (f: File) => {
+      const s = cropSessionRef.current;
+      if (!s) return;
+      s.croppedNew.push(f);
+      setCropQueue((q) => {
+        const rest = q.slice(1);
+        if (rest.length === 0) finalizeCropSession();
+        return rest;
+      });
+    },
+    [finalizeCropSession]
+  );
+
+  const abortCropQueue = useCallback(() => {
+    cropSessionRef.current = null;
+    setReEditKey(null);
+    setCropQueue([]);
+  }, []);
+
   const fileHint = useMemo(() => {
-    if (kind === "image") return "支持多张 JPEG/PNG/WebP/GIF，单张 ≤ 20MB。可拖拽到下方区域或点击选择。";
+    if (kind === "image")
+      return "支持多张 JPEG/PNG/WebP/GIF，单张 ≤ 20MB。可拖拽到下方区域或点击选择。开启「上传前裁切」可在手机上去边、放大题干区域。";
     if (kind === "document") return "上传单个 PDF 或 DOCX（≤ 20MB）。可拖拽到下方区域或点击选择。";
     return "直接粘贴错题文字即可。";
   }, [kind]);
@@ -286,6 +338,9 @@ export function App(): JSX.Element {
     setPickedFiles([]);
     dragDepth.current = 0;
     setIsDragging(false);
+    cropSessionRef.current = null;
+    setCropQueue([]);
+    setReEditKey(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [kind]);
 
@@ -354,19 +409,37 @@ export function App(): JSX.Element {
     [modelPlaceholder]
   );
 
-  const onFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const list = e.target.files;
-    if (!list?.length) {
-      setPickedFiles([]);
-      return;
-    }
-    const arr = Array.from(list);
-    if (kind === "image") {
-      setPickedFiles(filterForKind(arr, "image"));
-    } else {
-      setPickedFiles(filterForKind(arr, "document"));
-    }
-  }, [kind]);
+  const cropDialogIndexLabel = useMemo(() => {
+    if (reEditKey) return "（替换当前文件）";
+    if (cropQueue.length === 0) return "";
+    const s = cropSessionRef.current;
+    const done = s?.croppedNew.length ?? 0;
+    const total = done + cropQueue.length;
+    return `（第 ${done + 1} / ${total} 张）`;
+  }, [cropQueue.length, reEditKey]);
+
+  const onFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const list = e.target.files;
+      if (!list?.length) {
+        setPickedFiles([]);
+        return;
+      }
+      const arr = Array.from(list);
+      if (kind === "image") {
+        const imgs = filterForKind(arr, "image");
+        if (cropBeforeUpload && imgs.length) {
+          cropSessionRef.current = { mode: "replace", baseFiles: [], croppedNew: [] };
+          setCropQueue(imgs);
+        } else {
+          setPickedFiles(imgs);
+        }
+      } else {
+        setPickedFiles(filterForKind(arr, "document"));
+      }
+    },
+    [kind, cropBeforeUpload]
+  );
 
   const onDropFiles = useCallback(
     (e: React.DragEvent) => {
@@ -374,16 +447,28 @@ export function App(): JSX.Element {
       e.stopPropagation();
       dragDepth.current = 0;
       setIsDragging(false);
+      if (cropQueue.length > 0) return;
       const incoming = Array.from(e.dataTransfer.files ?? []);
       if (!incoming.length) return;
       if (kind === "image") {
-        setPickedFiles((prev) => mergeImageFiles(prev, incoming));
+        const imgs = filterForKind(incoming, "image");
+        if (!imgs.length) return;
+        if (cropBeforeUpload) {
+          cropSessionRef.current = {
+            mode: "append",
+            baseFiles: pickedFiles,
+            croppedNew: [],
+          };
+          setCropQueue(imgs);
+        } else {
+          setPickedFiles((prev) => mergeImageFiles(prev, incoming));
+        }
       } else {
         const next = filterForKind(incoming, "document");
         if (next.length) setPickedFiles(next);
       }
     },
-    [kind]
+    [kind, cropBeforeUpload, pickedFiles, cropQueue.length]
   );
 
   const onDragEnterZone = useCallback((e: React.DragEvent) => {
@@ -776,6 +861,17 @@ export function App(): JSX.Element {
             <label className="label-text" htmlFor="file">
               文件
             </label>
+            {kind === "image" ? (
+              <label className="crop-toggle">
+                <input
+                  type="checkbox"
+                  checked={cropBeforeUpload}
+                  onChange={(e) => setCropBeforeUpload(e.target.checked)}
+                  disabled={busy || cropQueue.length > 0}
+                />
+                <span>上传前裁切（手机上去边、放大题干；多图会逐张确认）</span>
+              </label>
+            ) : null}
             <div
               className={`drop-zone ${isDragging ? "drop-zone--active" : ""}`}
               onDragEnter={onDragEnterZone}
@@ -795,7 +891,7 @@ export function App(): JSX.Element {
                     : ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 }
                 onChange={onFileInputChange}
-                disabled={busy}
+                disabled={busy || cropQueue.length > 0}
               />
               <div className="drop-zone-inner" aria-hidden>
                 <p className="drop-zone-title">拖拽文件到此处释放</p>
@@ -805,9 +901,24 @@ export function App(): JSX.Element {
             {pickedFiles.length > 0 ? (
               <ul className="picked-list">
                 {pickedFiles.map((f) => (
-                  <li key={`${f.name}-${f.size}`}>
-                    {f.name}
-                    <span className="picked-meta">（{(f.size / 1024).toFixed(1)} KB）</span>
+                  <li key={fileDedupeKey(f)} className="picked-row">
+                    <span className="picked-row-main">
+                      {f.name}
+                      <span className="picked-meta">（{(f.size / 1024).toFixed(1)} KB）</span>
+                    </span>
+                    {kind === "image" ? (
+                      <button
+                        type="button"
+                        className="secondary picked-recrop"
+                        onClick={() => {
+                          setReEditKey(fileDedupeKey(f));
+                          setCropQueue([f]);
+                        }}
+                        disabled={busy || cropQueue.length > 0}
+                      >
+                        裁切
+                      </button>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -1199,6 +1310,32 @@ export function App(): JSX.Element {
           </div>
         ) : null}
       </section>
+
+      {cropQueue[0] ? (
+        <ImageCropDialog
+          file={cropQueue[0]}
+          indexLabel={cropDialogIndexLabel}
+          busy={busy}
+          onConfirmCropped={(nf) => {
+            if (reEditKey) {
+              setPickedFiles((prev) => prev.map((x) => (fileDedupeKey(x) === reEditKey ? nf : x)));
+              setReEditKey(null);
+              setCropQueue([]);
+              return;
+            }
+            pushCropOutput(nf);
+          }}
+          onUseOriginal={(of) => {
+            if (reEditKey) {
+              setReEditKey(null);
+              setCropQueue([]);
+              return;
+            }
+            pushCropOutput(of);
+          }}
+          onAbortQueue={abortCropQueue}
+        />
+      ) : null}
     </div>
   );
 }
