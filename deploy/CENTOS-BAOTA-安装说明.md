@@ -80,6 +80,12 @@ npm run build
 
 子路径前端见仓库内 `deploy/nginx-subpath-baota.example.conf`，后端用 PM2 跑 `apps/server/dist/index.js`。
 
+### 5.1 宝塔站点与 `git pull`
+
+- 若 **`git pull` 提示 `package-lock.json` 本地修改将被覆盖**：在服务器上一般应**丢弃**对 lockfile 的本地改动（勿把面板里手改的 lock 当真相），执行：
+  - `git checkout -- package-lock.json`（仅恢复该文件），再 `git pull`；或 `git stash -u` 后 `git pull`，确认无冲突后再 `git stash drop`。
+- 宝塔可能在 **`apps/web/dist/.user.ini`** 写入防跨站配置；旧版 Vite 清空 `dist` 时可能报 **`ENOTDIR ... .user.ini`**。仓库已在 **`npm run build -w @qusetion-repair/web`** 前自动执行 `scripts/clean-dist.mjs` 并关闭 `emptyOutDir`，保留 `.user.ini` 并删除其余构建产物后再打包。若仍失败，检查该文件是否被 `chattr +i` 锁定：`lsattr apps/web/dist/.user.ini`。
+
 ---
 
 ## 自检清单

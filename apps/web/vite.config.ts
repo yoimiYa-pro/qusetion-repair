@@ -60,6 +60,10 @@ console.info(`[vite] base=${base}  proxy ${apiProxyPrefix} -> ${apiTarget}`);
 export default defineConfig({
   base,
   plugins: [react()],
+  /** 见 `scripts/clean-dist.mjs`：宝塔常在 dist 下放 `.user.ini`，与 Vite 默认 emptyDir 冲突 */
+  build: {
+    emptyOutDir: false,
+  },
   server: {
     port: 5173,
     proxy: { ...apiProxy },
