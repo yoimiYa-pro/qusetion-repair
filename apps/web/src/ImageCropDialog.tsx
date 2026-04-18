@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Cropper, { type Area, type MediaSize } from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
 import { croppedFileName, getCroppedImageBlob } from "./getCroppedImage";
+import { reencodeToJpegIfNeeded } from "./imageNormalize";
 
 export interface ImageCropDialogProps {
   file: File | null;
@@ -85,9 +86,18 @@ export function ImageCropDialog({
     }
   }, [file, objectUrl, exporting, onConfirmCropped]);
 
-  const handleOriginal = useCallback(() => {
+  const handleOriginal = useCallback(async () => {
     if (!file || exporting) return;
-    onUseOriginal(file);
+    setExporting(true);
+    setError("");
+    try {
+      const out = await reencodeToJpegIfNeeded(file);
+      onUseOriginal(out);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "无法处理原图，请改用「确认裁切」或导出为 JPG 再选");
+    } finally {
+      setExporting(false);
+    }
   }, [file, exporting, onUseOriginal]);
 
   if (!file || !objectUrl) return null;
@@ -148,7 +158,7 @@ export function ImageCropDialog({
           <button type="button" className="secondary" onClick={onAbortQueue} disabled={disabled}>
             取消全部
           </button>
-          <button type="button" className="secondary" onClick={handleOriginal} disabled={disabled}>
+          <button type="button" className="secondary" onClick={() => void handleOriginal()} disabled={disabled}>
             本张用原图
           </button>
           <button type="button" onClick={() => void handleConfirm()} disabled={disabled}>

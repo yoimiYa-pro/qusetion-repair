@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ImageCropDialog } from "./ImageCropDialog";
+import { reencodeToJpegIfNeeded } from "./imageNormalize";
 
-const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/i;
+/** 含 iPhone 相机常见的 HEIC/HEIF；部分机型 MIME 为空仅靠扩展名 */
+const IMAGE_MIME = /^image\/(jpe?g|png|webp|gif|heic|heif)$/i;
 
 function isImageFile(f: File): boolean {
-  return IMAGE_MIME.test(f.type) || /\.(jpe?g|png|gif|webp)$/i.test(f.name);
+  const n = f.name.toLowerCase();
+  if (IMAGE_MIME.test(f.type)) return true;
+  if (/\.(jpe?g|png|gif|webp|heic|heif)$/i.test(n)) return true;
+  if (!f.type && /\.(jpe?g|png|gif|webp|heic|heif)$/i.test(n)) return true;
+  if (f.type === "application/octet-stream" && /\.(jpe?g|png|heic|heif)$/i.test(n)) return true;
+  return false;
 }
 
 function isDocumentFile(f: File): boolean {
@@ -276,12 +283,12 @@ export function App(): JSX.Element {
   /** 从已选列表点「裁切」替换该文件时非 null */
   const [reEditKey, setReEditKey] = useState<string | null>(null);
   const cropSessionRef = useRef<ImageCropSession | null>(null);
-  const [cropBeforeUpload, setCropBeforeUpload] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(max-width: 900px)").matches : true
-  );
+  /** 默认开启：避免「桌面版网站」宽视口下拍照不进入裁切；不需要时在界面取消勾选 */
+  const [cropBeforeUpload, setCropBeforeUpload] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const dragDepth = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>("");
   const [job, setJob] = useState<JobResponse | null>(null);
@@ -327,9 +334,29 @@ export function App(): JSX.Element {
     setCropQueue([]);
   }, []);
 
+  const applyPickedImages = useCallback(
+    (imgs: File[], mode: "replace" | "append") => {
+      if (!imgs.length) return;
+      if (cropBeforeUpload) {
+        cropSessionRef.current =
+          mode === "replace"
+            ? { mode: "replace", baseFiles: [], croppedNew: [] }
+            : { mode: "append", baseFiles: [...pickedFiles], croppedNew: [] };
+        setCropQueue(imgs);
+      } else {
+        void (async () => {
+          const normalized = await Promise.all(imgs.map(reencodeToJpegIfNeeded));
+          if (mode === "replace") setPickedFiles(normalized);
+          else setPickedFiles((prev) => mergeImageFiles(prev, normalized));
+        })();
+      }
+    },
+    [cropBeforeUpload, pickedFiles]
+  );
+
   const fileHint = useMemo(() => {
     if (kind === "image")
-      return "支持多张 JPEG/PNG/WebP/GIF，单张 ≤ 20MB。可拖拽到下方区域或点击选择。开启「上传前裁切」可在手机上去边、放大题干区域。";
+      return "支持多张 JPEG/PNG/WebP/GIF/HEIC（iPhone 相机），单张 ≤ 20MB。建议开启「上传前裁切」；小屏可使用「拍照（相机）」直接唤起镜头。";
     if (kind === "document") return "上传单个 PDF 或 DOCX（≤ 20MB）。可拖拽到下方区域或点击选择。";
     return "直接粘贴错题文字即可。";
   }, [kind]);
@@ -342,6 +369,7 @@ export function App(): JSX.Element {
     setCropQueue([]);
     setReEditKey(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   }, [kind]);
 
   useEffect(() => {
@@ -427,18 +455,22 @@ export function App(): JSX.Element {
       }
       const arr = Array.from(list);
       if (kind === "image") {
-        const imgs = filterForKind(arr, "image");
-        if (cropBeforeUpload && imgs.length) {
-          cropSessionRef.current = { mode: "replace", baseFiles: [], croppedNew: [] };
-          setCropQueue(imgs);
-        } else {
-          setPickedFiles(imgs);
-        }
+        applyPickedImages(filterForKind(arr, "image"), "replace");
       } else {
         setPickedFiles(filterForKind(arr, "document"));
       }
     },
-    [kind, cropBeforeUpload]
+    [kind, applyPickedImages]
+  );
+
+  const onCameraInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const list = e.target.files;
+      if (!list?.length || kind !== "image") return;
+      applyPickedImages(filterForKind(Array.from(list), "image"), "append");
+      e.target.value = "";
+    },
+    [kind, applyPickedImages]
   );
 
   const onDropFiles = useCallback(
@@ -453,22 +485,13 @@ export function App(): JSX.Element {
       if (kind === "image") {
         const imgs = filterForKind(incoming, "image");
         if (!imgs.length) return;
-        if (cropBeforeUpload) {
-          cropSessionRef.current = {
-            mode: "append",
-            baseFiles: pickedFiles,
-            croppedNew: [],
-          };
-          setCropQueue(imgs);
-        } else {
-          setPickedFiles((prev) => mergeImageFiles(prev, incoming));
-        }
+        applyPickedImages(imgs, "append");
       } else {
         const next = filterForKind(incoming, "document");
         if (next.length) setPickedFiles(next);
       }
     },
-    [kind, cropBeforeUpload, pickedFiles, cropQueue.length]
+    [kind, applyPickedImages, cropQueue.length]
   );
 
   const onDragEnterZone = useCallback((e: React.DragEvent) => {
@@ -896,8 +919,43 @@ export function App(): JSX.Element {
               <div className="drop-zone-inner" aria-hidden>
                 <p className="drop-zone-title">拖拽文件到此处释放</p>
                 <p className="drop-zone-sub">或点击此区域选择文件</p>
+                {kind === "image" ? (
+                  <p className="drop-zone-sub drop-zone-sub--mobile-hint">小屏可点下方「拍照」直接打开相机。</p>
+                ) : null}
               </div>
             </div>
+            {kind === "image" ? (
+              <>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="camera-input-hidden"
+                  onChange={onCameraInputChange}
+                  disabled={busy || cropQueue.length > 0}
+                  aria-hidden
+                />
+                <div className="mobile-capture-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => cameraInputRef.current?.click()}
+                    disabled={busy || cropQueue.length > 0}
+                  >
+                    拍照（相机）
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={busy || cropQueue.length > 0}
+                  >
+                    相册 / 文件
+                  </button>
+                </div>
+              </>
+            ) : null}
             {pickedFiles.length > 0 ? (
               <ul className="picked-list">
                 {pickedFiles.map((f) => (
@@ -930,6 +988,7 @@ export function App(): JSX.Element {
                 onClick={() => {
                   setPickedFiles([]);
                   if (fileInputRef.current) fileInputRef.current.value = "";
+                  if (cameraInputRef.current) cameraInputRef.current.value = "";
                 }}
                 disabled={busy}
               >
