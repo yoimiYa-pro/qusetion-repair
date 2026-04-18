@@ -1,0 +1,81 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderMistakeBatchToMarkdown > matches snapshot for multi-item batch 1`] = `
+"<!-- batch: 期中复习 -->
+
+---
+title: "二次方程求根"
+date: "2026-04-17"
+subject: "数学"
+tags:
+  - "一元二次方程"
+  - "判别式"
+difficulty: "medium"
+status: "draft"
+mistake_index: 1
+---
+# 二次方程求根
+
+> 来源提示：课堂练习 P12
+
+## 题干
+
+若关于 x 的方程 x^2 - 2x + k = 0 有两个不等实根，求 k 的范围。
+
+## 选项
+
+A. k < 1
+
+B. k ≤ 1
+
+C. k > 1
+
+D. k ≥ 1
+
+## 作答
+
+**我的答案：** k ≤ 1
+
+**参考答案：** k < 1
+
+## 解析
+
+有两个不等实根要求判别式 Δ = 4 - 4k > 0，故 k < 1。
+
+## 公式 / LaTeX
+
+- $\\Delta = b^2 - 4ac$
+
+## 知识点
+
+一元二次方程、判别式
+
+
+---
+
+---
+title: "文言文虚词"
+date: "2026-04-17"
+subject: "语文"
+tags:
+  - "文言虚词"
+  - "待确认"
+difficulty: "unknown"
+status: "draft"
+mistake_index: 2
+---
+# 文言文虚词
+
+## 题干
+
+下列句中「之」的用法相同的一组是？
+
+## 解析
+
+不确定处待确认：需结合原题选项核对。
+
+## 知识点
+
+文言虚词、待确认
+"
+`;

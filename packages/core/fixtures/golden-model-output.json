@@ -1,0 +1,18 @@
+{
+  "batch_title": "黄金样例：模型输出形状回归",
+  "items": [
+    {
+      "title": "二次方程判别式",
+      "subject": "数学",
+      "topic_tags": ["一元二次方程", "判别式"],
+      "stem": "若关于 x 的方程 x^2 - 2x + k = 0 有两个不等实根，求 k 的范围。",
+      "options": ["k < 1", "k ≤ 1", "k > 1", "k ≥ 1"],
+      "user_answer": "k ≤ 1",
+      "correct_answer": "k < 1",
+      "analysis": "有两个不等实根要求判别式 Δ > 0。",
+      "formulas": ["\\Delta = b^2 - 4ac"],
+      "difficulty": "medium",
+      "status": "draft"
+    }
+  ]
+}

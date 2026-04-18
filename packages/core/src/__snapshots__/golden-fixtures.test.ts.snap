@@ -1,0 +1,51 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden fixtures > golden-model-output.json validates and renders deterministically 1`] = `
+"<!-- batch: 黄金样例：模型输出形状回归 -->
+
+---
+title: "二次方程判别式"
+date: "2026-04-17"
+subject: "数学"
+tags:
+  - "一元二次方程"
+  - "判别式"
+difficulty: "medium"
+status: "draft"
+mistake_index: 1
+---
+# 二次方程判别式
+
+## 题干
+
+若关于 x 的方程 x^2 - 2x + k = 0 有两个不等实根，求 k 的范围。
+
+## 选项
+
+A. k < 1
+
+B. k ≤ 1
+
+C. k > 1
+
+D. k ≥ 1
+
+## 作答
+
+**我的答案：** k ≤ 1
+
+**参考答案：** k < 1
+
+## 解析
+
+有两个不等实根要求判别式 Δ > 0。
+
+## 公式 / LaTeX
+
+- $\\Delta = b^2 - 4ac$
+
+## 知识点
+
+一元二次方程、判别式
+"
+`;
