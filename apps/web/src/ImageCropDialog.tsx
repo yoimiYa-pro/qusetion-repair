@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import Cropper, { type Area, type MediaSize } from "react-easy-crop";
-import "react-easy-crop/react-easy-crop.css";
-import { croppedFileName, getCroppedImageBlob } from "./getCroppedImage";
+import ReactCrop, { centerCrop, type Crop, type PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import { croppedFileName, getCroppedImageBlobFromImageElement } from "./getCroppedImage";
 import { reencodeToJpegIfNeeded } from "./imageNormalize";
 
 export interface ImageCropDialogProps {
@@ -22,11 +22,11 @@ export function ImageCropDialog({
   onAbortQueue,
 }: ImageCropDialogProps): JSX.Element | null {
   const titleId = useId();
+  const imgRef = useRef<HTMLImageElement>(null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [aspect, setAspect] = useState(4 / 3);
-  const croppedAreaPixelsRef = useRef<Area | null>(null);
+  /** 不传 `aspect` 即为自由长宽比，可拖四角/四边调整 */
+  const [crop, setCrop] = useState<Crop>();
+  const completedCropRef = useRef<PixelCrop | null>(null);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,10 +36,8 @@ export function ImageCropDialog({
         if (prev) URL.revokeObjectURL(prev);
         return null;
       });
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
-      setAspect(4 / 3);
-      croppedAreaPixelsRef.current = null;
+      setCrop(undefined);
+      completedCropRef.current = null;
       setError("");
       return;
     }
@@ -48,35 +46,45 @@ export function ImageCropDialog({
       if (prev) URL.revokeObjectURL(prev);
       return url;
     });
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
+    setCrop(undefined);
+    completedCropRef.current = null;
     setError("");
-    croppedAreaPixelsRef.current = null;
     return () => {
       URL.revokeObjectURL(url);
     };
   }, [file]);
 
-  const onCropComplete = useCallback((_area: Area, areaPixels: Area) => {
-    croppedAreaPixelsRef.current = areaPixels;
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const { width, height } = img;
+    const initial = centerCrop(
+      {
+        unit: "%",
+        width: 82,
+        height: 72,
+      },
+      width,
+      height
+    );
+    setCrop(initial);
   }, []);
 
-  const onMediaLoaded = useCallback((ms: MediaSize) => {
-    const r = ms.naturalWidth / Math.max(1, ms.naturalHeight);
-    setAspect(Number.isFinite(r) && r > 0 ? r : 4 / 3);
+  const onCropComplete = useCallback((c: PixelCrop) => {
+    completedCropRef.current = c;
   }, []);
 
   const handleConfirm = useCallback(async () => {
     if (!file || !objectUrl || exporting) return;
-    const pix = croppedAreaPixelsRef.current;
-    if (!pix) {
-      setError("请稍等画面加载完成后再试，或双指缩放调整选区。");
+    const img = imgRef.current;
+    const pix = completedCropRef.current;
+    if (!img || !pix || pix.width < 2 || pix.height < 2) {
+      setError("请先在图上拖出裁切框（可拖角、拖边改变长宽），并稍等加载完成。");
       return;
     }
     setExporting(true);
     setError("");
     try {
-      const { blob, mime, ext } = await getCroppedImageBlob(objectUrl, pix, file.type);
+      const { blob, mime, ext } = await getCroppedImageBlobFromImageElement(img, pix, file.type);
       const name = croppedFileName(file.name, ext);
       onConfirmCropped(new File([blob], name, { type: mime }));
     } catch (e) {
@@ -111,47 +119,28 @@ export function ImageCropDialog({
           <h2 id={titleId} className="crop-title">
             裁切图片 <span className="crop-index">{indexLabel}</span>
           </h2>
-          <p className="crop-hint">双指缩放、拖动画面以框选题干区域；GIF 裁切后为静态 PNG。</p>
+          <p className="crop-hint">
+            拖动四角或边可<strong>自由改变裁切区长和宽</strong>；拖动框内可平移。GIF 裁切后为静态 PNG。
+          </p>
         </header>
-        <div className="crop-stage">
-          <Cropper
-            image={objectUrl}
+        <div className="crop-stage crop-stage--free">
+          <ReactCrop
             crop={crop}
-            zoom={zoom}
-            minZoom={0.35}
-            maxZoom={4}
-            aspect={aspect}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-            onMediaLoaded={onMediaLoaded}
-            rotation={0}
-            restrictPosition
-            cropShape="rect"
-            showGrid
-            zoomWithScroll={false}
-            classes={{}}
-            style={{
-              containerStyle: {
-                width: "100%",
-                height: "100%",
-                touchAction: "none",
-              },
-            }}
-          />
-        </div>
-        <div className="crop-zoom">
-          <label htmlFor="crop-zoom-range">缩放</label>
-          <input
-            id="crop-zoom-range"
-            type="range"
-            min={0.35}
-            max={4}
-            step={0.02}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            disabled={disabled}
-          />
+            onChange={(_pixelCrop, percentCrop) => setCrop(percentCrop)}
+            onComplete={(c) => onCropComplete(c)}
+            minWidth={24}
+            minHeight={24}
+            ruleOfThirds
+            className="react-crop-in-dialog"
+          >
+            <img
+              ref={imgRef}
+              src={objectUrl}
+              alt="待裁切"
+              className="crop-img"
+              onLoad={onImageLoad}
+            />
+          </ReactCrop>
         </div>
         {error ? <p className="crop-error">{error}</p> : null}
         <footer className="crop-footer">

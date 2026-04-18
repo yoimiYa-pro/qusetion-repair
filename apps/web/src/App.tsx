@@ -926,33 +926,29 @@ export function App(): JSX.Element {
             </div>
             {kind === "image" ? (
               <>
+                {/*
+                  iOS / 部分 WebView 对 display:none + JS .click() 调相机不稳定；
+                  使用 label[for] 关联「视觉上隐藏但仍占位」的 input。
+                */}
                 <input
+                  id="ingest-camera-input"
                   ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
-                  className="camera-input-hidden"
+                  className="visually-hidden-file-input"
                   onChange={onCameraInputChange}
                   disabled={busy || cropQueue.length > 0}
-                  aria-hidden
                 />
-                <div className="mobile-capture-actions">
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => cameraInputRef.current?.click()}
-                    disabled={busy || cropQueue.length > 0}
-                  >
+                <div
+                  className={`mobile-capture-actions${busy || cropQueue.length > 0 ? " mobile-capture-actions--disabled" : ""}`}
+                >
+                  <label htmlFor="ingest-camera-input" className="secondary mobile-capture-label">
                     拍照（相机）
-                  </button>
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={busy || cropQueue.length > 0}
-                  >
+                  </label>
+                  <label htmlFor="file" className="secondary mobile-capture-label">
                     相册 / 文件
-                  </button>
+                  </label>
                 </div>
               </>
             ) : null}
