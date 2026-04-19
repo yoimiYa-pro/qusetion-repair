@@ -1466,19 +1466,25 @@ button.picked-recrop {
 }
 
 /* —— 移动端 / 窄屏（≤640px）全局优化 —— */
+/*
+ * 布局参考常见「工具型 Web」：顶栏信息轻量、主区纵向可滚、底栏主操作固定；
+ * 底栏需同时考虑 env(safe-area-inset-bottom) 与部分 Android / 内置浏览器底栏（safe-area 常为 0），
+ * 故对 Dock 内边距使用 max(16px, safe-area) 作为下限，避免按钮被系统导航遮挡。
+ */
 
 @media (max-width: 640px) {
   body {
-    padding: 0.65rem max(0.55rem, env(safe-area-inset-left, 0)) max(1rem, env(safe-area-inset-bottom, 0))
-      max(0.55rem, env(safe-area-inset-right, 0));
+    padding: max(0.65rem, env(safe-area-inset-top, 0px)) max(0.55rem, env(safe-area-inset-right, 0px))
+      max(0.75rem, env(safe-area-inset-bottom, 0px)) max(0.55rem, env(safe-area-inset-left, 0px));
   }
 
   .app-root.shell {
     max-width: 100%;
   }
 
+  /* 为固定底栏 + 浏览器底 UI 预留空间（高度随双按钮 Dock 略增） */
   .app-root.shell:not(.shell--crop-open) {
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(4.75rem + max(16px, env(safe-area-inset-bottom, 0px)));
   }
 
   .mobile-submit-dock {
@@ -1487,14 +1493,19 @@ button.picked-recrop {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 1500;
+    z-index: 8000;
     align-items: stretch;
     gap: 0.5rem;
-    padding: 0.45rem max(0.55rem, env(safe-area-inset-left, 0)) calc(0.5rem + env(safe-area-inset-bottom, 0))
-      max(0.55rem, env(safe-area-inset-right, 0));
-    background: linear-gradient(to top, rgba(247, 248, 250, 0.97) 55%, rgba(247, 248, 250, 0));
+    padding-top: 0.45rem;
+    padding-left: max(0.55rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.55rem, env(safe-area-inset-right, 0px));
+    /* 无刘海机型上 env(safe-area) 常为 0，仍可能被系统导航条盖住，故与 max(16px, …) 取较大值 */
+    padding-bottom: calc(0.45rem + max(16px, env(safe-area-inset-bottom, 0px)));
+    background: linear-gradient(to top, rgba(247, 248, 250, 0.98) 50%, rgba(247, 248, 250, 0.92));
     border-top: 1px solid var(--rule);
-    box-shadow: 0 -6px 24px var(--shadow);
+    box-shadow: 0 -8px 28px rgba(26, 35, 50, 0.1);
+    /* 避免与浏览器层叠上下文异常时底栏沉底失败 */
+    isolation: isolate;
   }
 
   .shell--crop-open .mobile-submit-dock {
@@ -1567,6 +1578,10 @@ button.picked-recrop {
   }
 
   .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--bg);
     flex-direction: column;
     align-items: stretch;
     gap: 0.45rem;
@@ -1720,7 +1735,7 @@ button.picked-recrop {
 
   .tier-fieldset {
     padding: 0.55rem 0.65rem 0.7rem;
-    margin-top: 0.55rem;
+    margin-top: 0.4rem;
   }
 
   .tier-option {
@@ -1746,6 +1761,12 @@ button.picked-recrop {
 
   .advanced-block {
     padding: 0.1rem 0.55rem 0.55rem;
+    margin: 0.35rem 0 0.45rem;
+  }
+
+  .panel--input .picked-list {
+    margin-top: 0.25rem;
+    margin-bottom: 0.1rem;
   }
 
   .meta-grid {
