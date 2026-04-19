@@ -1076,13 +1076,14 @@ button.secondary.danger:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 @media (min-width: 640px) {
   .crop-sheet {
     border-radius: var(--radius);
-    max-width: 720px;
-    max-height: min(94vh, 880px);
+    max-width: min(96vw, 920px);
+    max-height: min(96dvh, 900px);
   }
 }
 
@@ -1095,6 +1096,16 @@ button.secondary.danger:hover:not(:disabled) {
     border-radius: 0;
     box-shadow: none;
   }
+}
+
+/* 中间区域可滚动，底栏始终贴裁切层底部可见，避免 overflow:hidden 裁掉按钮 */
+.crop-sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .crop-header {
@@ -1192,9 +1203,9 @@ button.secondary.danger:hover:not(:disabled) {
 @media (min-width: 640px) {
   .crop-stage {
     flex: 1 1 auto;
-    min-height: 300px;
-    height: min(58vh, 540px);
-    max-height: min(58vh, 540px);
+    min-height: 260px;
+    height: min(50vh, 520px);
+    max-height: min(50vh, 520px);
   }
 }
 
@@ -1234,7 +1245,7 @@ button.secondary.danger:hover:not(:disabled) {
 
 @media (min-width: 640px) {
   .crop-stage--free .crop-img {
-    max-height: min(56vh, 520px);
+    max-height: min(48vh, 500px);
   }
 }
 
@@ -1301,7 +1312,8 @@ button.secondary.danger:hover:not(:disabled) {
 
 @media (min-width: 640px) {
   .crop-preview-img {
-    max-height: min(26vh, 280px);
+    /* 桌面：缩略预览，避免与裁切区抢高度；详情可滚动画布内查看 */
+    max-height: min(18vh, 168px);
   }
 }
 
@@ -1348,7 +1360,20 @@ button.secondary.danger:hover:not(:disabled) {
 .crop-preview-dismiss-btn {
   flex: 0 1 auto;
   min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
   touch-action: manipulation;
+}
+
+.crop-preview-dismiss-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.55);
 }
 
 @media (min-width: 640px) {
@@ -1384,6 +1409,7 @@ button.secondary.danger:hover:not(:disabled) {
   padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0));
   border-top: 1px solid var(--rule);
   background: #fafbfc;
+  box-shadow: 0 -4px 16px rgba(26, 35, 50, 0.06);
 }
 
 @media (max-width: 480px) {
