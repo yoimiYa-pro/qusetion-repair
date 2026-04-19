@@ -1201,11 +1201,13 @@ button.secondary.danger:hover:not(:disabled) {
 }
 
 @media (min-width: 640px) {
+  /* 浅灰工作台：避免「黑边」像坏图；留白仍是比例适配，属正常 */
   .crop-stage {
     flex: 1 1 auto;
     min-height: 260px;
     height: min(50vh, 520px);
     max-height: min(50vh, 520px);
+    background: #e8eaef;
   }
 }
 
@@ -1261,6 +1263,17 @@ button.secondary.danger:hover:not(:disabled) {
   --rc-border-color: rgba(255, 255, 255, 0.95);
 }
 
+@media (min-width: 640px) {
+  .crop-stage--free .ReactCrop {
+    --rc-border-color: rgba(30, 58, 95, 0.95);
+  }
+
+  .crop-stage--free .ReactCrop__crop-selection {
+    border: 2px solid rgba(30, 58, 95, 0.95);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
+  }
+}
+
 .crop-preview-bar {
   flex-shrink: 0;
   display: flex;
@@ -1280,6 +1293,12 @@ button.secondary.danger:hover:not(:disabled) {
 
 .crop-preview-trigger {
   flex: 1 1 auto;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.crop-preview-close-inline {
+  flex: 0 0 auto;
   min-height: 44px;
   touch-action: manipulation;
 }
@@ -1314,6 +1333,7 @@ button.secondary.danger:hover:not(:disabled) {
   .crop-preview-img {
     /* 桌面：缩略预览，避免与裁切区抢高度；详情可滚动画布内查看 */
     max-height: min(18vh, 168px);
+    border-color: var(--rule-strong);
   }
 }
 
@@ -1323,74 +1343,21 @@ button.secondary.danger:hover:not(:disabled) {
   }
 }
 
-.crop-preview-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-top: 0.65rem;
-}
-
-.crop-preview-confirm-btn {
-  flex: 1 1 auto;
-  min-width: min(100%, 200px);
-  min-height: 44px;
-  padding: 0.5rem 1rem;
-  font-weight: 700;
-  font-size: 0.92rem;
-  color: #fff;
-  background: var(--primary);
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.crop-preview-confirm-btn:hover:not(:disabled) {
-  background: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
-
-.crop-preview-confirm-btn:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.crop-preview-dismiss-btn {
-  flex: 0 1 auto;
-  min-height: 44px;
-  padding: 0.5rem 0.85rem;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.crop-preview-dismiss-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.55);
-}
-
-@media (min-width: 640px) {
-  .crop-preview-actions {
-    justify-content: stretch;
-  }
-
-  .crop-preview-confirm-btn {
-    flex: 1 1 200px;
-  }
-}
-
 .crop-preview-caption {
   margin: 0.5rem 0 0;
   font-size: 0.76rem;
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.4;
+}
+
+@media (min-width: 640px) {
+  .crop-preview-frame {
+    background: #e8eaef;
+  }
+
+  .crop-preview-caption {
+    color: var(--ink-muted);
+  }
 }
 
 .crop-error {
