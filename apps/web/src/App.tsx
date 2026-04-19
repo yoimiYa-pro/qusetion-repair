@@ -303,6 +303,35 @@ export function App(): JSX.Element {
 
   const activeFlowRef = useRef<HTMLElement | null>(null);
 
+  const cropDialogOpen = cropQueue.length > 0;
+
+  /** 裁切全屏时锁定背后滚动（含 iOS），避免底层页面与拖选区手势抢触控 */
+  useEffect(() => {
+    if (!cropDialogOpen) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    html.classList.add("crop-dialog-open");
+    body.classList.add("crop-dialog-open");
+    Object.assign(body.style, {
+      position: "fixed",
+      top: `-${scrollY}px`,
+      left: "0",
+      right: "0",
+      width: "100%",
+    });
+    return () => {
+      html.classList.remove("crop-dialog-open");
+      body.classList.remove("crop-dialog-open");
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [cropDialogOpen]);
+
   const finalizeCropSession = useCallback(() => {
     const s = cropSessionRef.current;
     if (!s) return;
@@ -815,7 +844,9 @@ export function App(): JSX.Element {
   );
 
   return (
-    <div className={`app-root shell${isRunPhase ? " shell--focus-run" : ""}`}>
+    <div
+      className={`app-root shell${isRunPhase ? " shell--focus-run" : ""}${cropDialogOpen ? " shell--crop-open" : ""}`}
+    >
       <header className="app-header">
         <div className="app-header-main">
           <h1>错题整理</h1>
@@ -1365,6 +1396,17 @@ export function App(): JSX.Element {
           </div>
         ) : null}
       </section>
+
+      <div className="mobile-submit-dock" aria-label="快捷操作">
+        <button
+          type="button"
+          className="mobile-submit-dock__btn"
+          onClick={() => void onSubmit()}
+          disabled={busy || cropQueue.length > 0}
+        >
+          {busy ? "处理中…" : "开始分析"}
+        </button>
+      </div>
 
       {cropQueue[0] ? (
         <ImageCropDialog

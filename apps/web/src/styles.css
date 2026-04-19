@@ -44,9 +44,19 @@ body {
   background: var(--bg);
 }
 
+html.crop-dialog-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 .shell {
   max-width: min(1120px, 100%);
   margin: 0 auto;
+}
+
+/* 默认隐藏；≤640px 见下方媒体查询 */
+.mobile-submit-dock {
+  display: none;
 }
 
 h1 {
@@ -1038,12 +1048,21 @@ button.secondary.danger:hover:not(:disabled) {
     env(safe-area-inset-left, 0);
   background: rgba(26, 35, 50, 0.55);
   backdrop-filter: blur(4px);
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 @media (min-width: 640px) {
   .crop-overlay {
     align-items: center;
     padding: 1rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .crop-overlay {
+    align-items: stretch;
+    padding: 0;
   }
 }
 
@@ -1066,10 +1085,14 @@ button.secondary.danger:hover:not(:disabled) {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 639px) {
   .crop-sheet {
-    max-height: 100dvh;
+    max-width: none;
+    max-height: none;
+    height: 100dvh;
+    min-height: 100dvh;
     border-radius: 0;
+    box-shadow: none;
   }
 }
 
@@ -1160,38 +1183,43 @@ button.secondary.danger:hover:not(:disabled) {
 
 .crop-stage {
   position: relative;
-  flex: 1 1 auto;
-  min-height: 220px;
-  height: min(52dvh, 52vh);
+  flex: 1 1 0;
+  min-height: 0;
   background: #0f1419;
-}
-
-@media (max-width: 480px) {
-  .crop-stage {
-    min-height: 200px;
-    height: min(58dvh, 58vh);
-    flex: 1 1 min(58dvh, 58vh);
-  }
 }
 
 @media (min-width: 640px) {
   .crop-stage {
+    flex: 1 1 auto;
     min-height: 280px;
     height: min(48vh, 420px);
+    max-height: min(48vh, 420px);
   }
 }
 
 .crop-stage--free {
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   padding: 0.35rem;
+}
+
+.crop-stage-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .crop-stage--free .react-crop-in-dialog {
   max-width: 100%;
+  max-height: 100%;
 }
 
 .crop-stage--free .crop-img {
@@ -1199,13 +1227,8 @@ button.secondary.danger:hover:not(:disabled) {
   max-width: 100%;
   width: auto;
   height: auto;
-  max-height: min(48dvh, 48vh);
-}
-
-@media (max-width: 480px) {
-  .crop-stage--free .crop-img {
-    max-height: min(56dvh, 56vh);
-  }
+  max-height: 100%;
+  object-fit: contain;
 }
 
 @media (min-width: 640px) {
@@ -1278,6 +1301,12 @@ button.secondary.danger:hover:not(:disabled) {
   border-radius: var(--radius-sm);
   border: 1px solid rgba(255, 255, 255, 0.35);
   object-fit: contain;
+}
+
+@media (max-width: 480px) {
+  .crop-preview-img {
+    max-height: min(22vh, 200px);
+  }
 }
 
 .crop-preview-caption {
@@ -1403,6 +1432,38 @@ button.picked-recrop {
     max-width: 100%;
   }
 
+  .app-root.shell:not(.shell--crop-open) {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0));
+  }
+
+  .mobile-submit-dock {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1500;
+    justify-content: stretch;
+    padding: 0.45rem max(0.55rem, env(safe-area-inset-left, 0)) calc(0.5rem + env(safe-area-inset-bottom, 0))
+      max(0.55rem, env(safe-area-inset-right, 0));
+    background: linear-gradient(to top, rgba(247, 248, 250, 0.97) 55%, rgba(247, 248, 250, 0));
+    border-top: 1px solid var(--rule);
+    box-shadow: 0 -6px 24px var(--shadow);
+  }
+
+  .shell--crop-open .mobile-submit-dock {
+    display: none;
+  }
+
+  .mobile-submit-dock__btn {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 48px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    touch-action: manipulation;
+  }
+
   h1 {
     font-size: 1.28rem;
     line-height: 1.25;
@@ -1412,6 +1473,18 @@ button.picked-recrop {
     font-size: 0.88rem;
     margin-bottom: 0.85rem;
     max-width: none;
+  }
+
+  .app-header-main .sub {
+    display: none;
+  }
+
+  .app-header-main h1 {
+    margin-bottom: 0.15rem;
+  }
+
+  #active-flow {
+    scroll-margin-top: 0.75rem;
   }
 
   .app-header {
@@ -1525,6 +1598,10 @@ button.picked-recrop {
   button.secondary,
   button.linkish {
     touch-action: manipulation;
+  }
+
+  .panel--input .panel-footer-actions {
+    display: none;
   }
 
   .panel-footer-actions {

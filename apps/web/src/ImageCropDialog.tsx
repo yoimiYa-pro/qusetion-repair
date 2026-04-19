@@ -184,22 +184,24 @@ export function ImageCropDialog({
           </details>
         </header>
         <div className="crop-stage crop-stage--free">
-          <ReactCrop
-            crop={crop}
-            onChange={(_pixelCrop, percentCrop) => setCrop(percentCrop)}
-            onComplete={(c) => onCropComplete(c)}
-            minWidth={28}
-            minHeight={28}
-            className="react-crop-in-dialog"
-          >
-            <img
-              ref={imgRef}
-              src={objectUrl}
-              alt="待裁切"
-              className="crop-img"
-              onLoad={onImageLoad}
-            />
-          </ReactCrop>
+          <div className="crop-stage-inner">
+            <ReactCrop
+              crop={crop}
+              onChange={(_pixelCrop, percentCrop) => setCrop(percentCrop)}
+              onComplete={(c) => onCropComplete(c)}
+              minWidth={28}
+              minHeight={28}
+              className="react-crop-in-dialog"
+            >
+              <img
+                ref={imgRef}
+                src={objectUrl}
+                alt="待裁切"
+                className="crop-img"
+                onLoad={onImageLoad}
+              />
+            </ReactCrop>
+          </div>
         </div>
 
         <div className="crop-preview-bar">
