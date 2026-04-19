@@ -363,6 +363,12 @@ export function App(): JSX.Element {
     setCropQueue([]);
   }, []);
 
+  const clearPickedFiles = useCallback(() => {
+    setPickedFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+  }, []);
+
   const applyPickedImages = useCallback(
     (imgs: File[], mode: "replace" | "append") => {
       if (!imgs.length) return;
@@ -1009,16 +1015,7 @@ export function App(): JSX.Element {
               </ul>
             ) : null}
             {pickedFiles.length > 0 ? (
-              <button
-                type="button"
-                className="secondary linkish"
-                onClick={() => {
-                  setPickedFiles([]);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                  if (cameraInputRef.current) cameraInputRef.current.value = "";
-                }}
-                disabled={busy}
-              >
+              <button type="button" className="secondary linkish clear-picked-inline" onClick={clearPickedFiles} disabled={busy}>
                 清空已选
               </button>
             ) : null}
@@ -1398,9 +1395,19 @@ export function App(): JSX.Element {
       </section>
 
       <div className="mobile-submit-dock" aria-label="快捷操作">
+        {(kind === "image" || kind === "document") && pickedFiles.length > 0 ? (
+          <button
+            type="button"
+            className="mobile-submit-dock__btn mobile-submit-dock__btn--secondary"
+            onClick={clearPickedFiles}
+            disabled={busy || cropQueue.length > 0}
+          >
+            清空已选
+          </button>
+        ) : null}
         <button
           type="button"
-          className="mobile-submit-dock__btn"
+          className="mobile-submit-dock__btn mobile-submit-dock__btn--primary"
           onClick={() => void onSubmit()}
           disabled={busy || cropQueue.length > 0}
         >
