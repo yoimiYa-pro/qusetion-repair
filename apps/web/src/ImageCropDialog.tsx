@@ -213,17 +213,25 @@ export function ImageCropDialog({
           >
             {previewGenerating ? "生成预览中…" : previewBlobUrl ? "刷新预览" : "预览裁切效果"}
           </button>
-          {previewBlobUrl ? (
-            <button type="button" className="secondary crop-preview-close" onClick={clearPreview} disabled={busy || exporting}>
-              关闭预览
-            </button>
-          ) : null}
         </div>
 
         {previewBlobUrl ? (
           <div className="crop-preview-frame">
             <img src={previewBlobUrl} alt="当前选区裁切后的预览" className="crop-preview-img" />
-            <p className="crop-preview-caption">以上为按当前选区导出的效果，确认无误后可点「确认裁切」。</p>
+            <div className="crop-preview-actions">
+              <button
+                type="button"
+                className="crop-preview-confirm-btn"
+                onClick={() => void handleConfirm()}
+                disabled={disabled}
+              >
+                {exporting ? "导出中…" : "确认裁切"}
+              </button>
+              <button type="button" className="secondary crop-preview-dismiss-btn" onClick={clearPreview} disabled={busy || exporting}>
+                关闭预览
+              </button>
+            </div>
+            <p className="crop-preview-caption">以上为按当前选区导出的效果；满意可直接点上方「确认裁切」，底部工具栏也可同样操作。</p>
           </div>
         ) : null}
 

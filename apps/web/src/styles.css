@@ -1068,7 +1068,7 @@ button.secondary.danger:hover:not(:disabled) {
 
 .crop-sheet {
   width: 100%;
-  max-width: 560px;
+  max-width: 720px;
   max-height: min(100dvh, 100vh);
   background: var(--surface);
   border-radius: var(--radius) var(--radius) 0 0;
@@ -1081,7 +1081,8 @@ button.secondary.danger:hover:not(:disabled) {
 @media (min-width: 640px) {
   .crop-sheet {
     border-radius: var(--radius);
-    max-height: min(92vh, 720px);
+    max-width: 720px;
+    max-height: min(94vh, 880px);
   }
 }
 
@@ -1191,9 +1192,9 @@ button.secondary.danger:hover:not(:disabled) {
 @media (min-width: 640px) {
   .crop-stage {
     flex: 1 1 auto;
-    min-height: 280px;
-    height: min(48vh, 420px);
-    max-height: min(48vh, 420px);
+    min-height: 300px;
+    height: min(58vh, 540px);
+    max-height: min(58vh, 540px);
   }
 }
 
@@ -1233,7 +1234,7 @@ button.secondary.danger:hover:not(:disabled) {
 
 @media (min-width: 640px) {
   .crop-stage--free .crop-img {
-    max-height: min(42vh, 440px);
+    max-height: min(56vh, 520px);
   }
 }
 
@@ -1272,11 +1273,6 @@ button.secondary.danger:hover:not(:disabled) {
   touch-action: manipulation;
 }
 
-.crop-preview-close {
-  min-height: 44px;
-  touch-action: manipulation;
-}
-
 .crop-preview-frame {
   flex-shrink: 0;
   padding: 0.5rem 1rem 0.65rem;
@@ -1303,14 +1299,70 @@ button.secondary.danger:hover:not(:disabled) {
   object-fit: contain;
 }
 
+@media (min-width: 640px) {
+  .crop-preview-img {
+    max-height: min(26vh, 280px);
+  }
+}
+
 @media (max-width: 480px) {
   .crop-preview-img {
     max-height: min(22vh, 200px);
   }
 }
 
+.crop-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+}
+
+.crop-preview-confirm-btn {
+  flex: 1 1 auto;
+  min-width: min(100%, 200px);
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #fff;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.crop-preview-confirm-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.crop-preview-confirm-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.crop-preview-dismiss-btn {
+  flex: 0 1 auto;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+@media (min-width: 640px) {
+  .crop-preview-actions {
+    justify-content: stretch;
+  }
+
+  .crop-preview-confirm-btn {
+    flex: 1 1 200px;
+  }
+}
+
 .crop-preview-caption {
-  margin: 0.4rem 0 0;
+  margin: 0.5rem 0 0;
   font-size: 0.76rem;
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.4;
