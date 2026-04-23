@@ -17,13 +17,13 @@ const validateBasicRaw = ajv.compile(mistakeBatchBasicSchema);
 
 function asBatchFromBasicValidated(data: unknown): MistakeNoteBatch {
   const o = data as {
-    items: Array<{ title: string; stem: string; topic_tags: string[]; options?: string[] }>;
+    items: Array<{ stem: string; topic_tags: string[]; options?: string[] }>;
     batch_title?: string;
   };
   return {
     batch_title: o.batch_title,
     items: o.items.map((i) => ({
-      title: i.title,
+      title: "",
       stem: i.stem,
       topic_tags: i.topic_tags,
       options: i.options,

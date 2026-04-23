@@ -61,7 +61,7 @@ describe("renderMistakeBatchToMarkdown", () => {
     expect(md).toMatch(/B\.\s*人工智能算法预测蛋白质结构/);
   });
 
-  it("basic tier omits 解析 and 知识点", () => {
+  it("basic tier omits 解析, 知识点, title frontmatter, and 一级标题", () => {
     const md = renderMistakeBatchToMarkdown(
       {
         items: [
@@ -81,5 +81,7 @@ describe("renderMistakeBatchToMarkdown", () => {
     expect(md).not.toContain("## 解析");
     expect(md).not.toContain("## 知识点");
     expect(md).toContain("output_tier: basic");
+    expect(md).not.toMatch(/(^|\n)title:\s/);
+    expect(md).not.toContain("# 示例");
   });
 });

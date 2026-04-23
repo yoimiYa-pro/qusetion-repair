@@ -34,7 +34,6 @@ function frontmatterBasic(item: MistakeItem, index: number, createdAt: string): 
   const tags = item.topic_tags?.length ? item.topic_tags : ["错题"];
   const lines = [
     "---",
-    `title: ${yamlScalar(item.title)}`,
     `date: ${yamlScalar(createdAt)}`,
     ...yamlBlockList("tags", tags),
     `output_tier: basic`,
@@ -86,7 +85,7 @@ function renderOneItem(item: MistakeItem, index: number, createdAt: string): str
 /** 基础模式：仅题干与选项 */
 function renderOneItemBasic(item: MistakeItem, index: number, createdAt: string): string {
   const fm = frontmatterBasic(item, index, createdAt);
-  let md = `${fm}# ${item.title}\n\n`;
+  let md = `${fm}`;
   md += section("题干", item.stem);
   if (item.options?.length) {
     const opts = item.options

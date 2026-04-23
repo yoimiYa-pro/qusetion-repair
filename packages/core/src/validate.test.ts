@@ -37,7 +37,6 @@ describe("validateMistakeBatchForTier basic", () => {
       {
         items: [
           {
-            title: "T",
             stem: "题干",
             topic_tags: ["标签"],
             options: ["A", "B"],
@@ -58,10 +57,25 @@ describe("validateMistakeBatchForTier basic", () => {
       {
         items: [
           {
-            title: "T",
             stem: "题干",
             topic_tags: [],
             analysis: "不应出现",
+          },
+        ],
+      },
+      "basic"
+    );
+    expect(res.ok).toBe(false);
+  });
+
+  it("rejects title field in basic mode", () => {
+    const res = validateMistakeBatchForTier(
+      {
+        items: [
+          {
+            title: "不应出现",
+            stem: "题干",
+            topic_tags: [],
           },
         ],
       },

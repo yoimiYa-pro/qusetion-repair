@@ -20,9 +20,8 @@ export const mistakeBatchBasicSchema = {
     mistakeItemBasic: {
       type: "object",
       additionalProperties: false,
-      required: ["title", "stem", "topic_tags"],
+      required: ["stem", "topic_tags"],
       properties: {
-        title: { type: "string", minLength: 1 },
         stem: { type: "string", minLength: 1 },
         topic_tags: {
           type: "array",

@@ -24,7 +24,7 @@ const SYSTEM_PROMPT_BASIC = `你是助教，只做「识题录入」，不进行
 1. 只输出一个 JSON 对象，不要 Markdown 围栏，不要额外说明。
 2. 仅从材料中提取题干（stem）与选项（options，若有）。不要输出 analysis、答案、公式、点评等字段；schema 中也不包含这些键。
 3. options 数组每一项只写选项正文，不要写「A.」「B.」「（A）」等序号（导出 Markdown 时会自动加 A/B/C）。
-4. 每项必须含 title（简短概括）、stem、topic_tags（可为空数组 []）。
+4. 每项须含 stem、topic_tags（可为空数组 []）；不要输出 title 字段，也不要输出答案、点评、解析类文字。
 5. 无明确选项时 options 可省略或填空数组；题干不清处用「待确认」占位，不要编造。
 6. 多道题拆成多个 items。`;
 
