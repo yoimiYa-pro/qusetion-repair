@@ -141,7 +141,13 @@ const STATIC_LLM_MODEL_PRESETS: Required<LlmModelPresets> = {
   moonshot: ["kimi-k2.5"],
   gemini: ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview"],
   openai: ["gpt-4o-mini", "gpt-4o"],
-  mimo: ["mimo-v2-omni", "mimo-v2-flash", "mimo-v2-pro"],
+  mimo: [
+    "mimo-v2.5",
+    "mimo-v2.5-pro",
+    "mimo-v2-omni",
+    "mimo-v2-flash",
+    "mimo-v2-pro",
+  ],
 };
 
 function mergeLlmModelPresetsFromApi(api: LlmModelPresets | null): Required<LlmModelPresets> {
@@ -449,7 +455,7 @@ export function App(): JSX.Element {
       case "gemini":
         return "默认 gemini-3.1-flash-lite-preview";
       case "mimo":
-        return "默认 mimo-v2-omni";
+        return "默认 mimo-v2.5";
       case "openai":
         return "默认 gpt-4o-mini";
       default:

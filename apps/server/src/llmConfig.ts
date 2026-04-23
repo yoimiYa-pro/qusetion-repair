@@ -5,7 +5,13 @@ export const LLM_MODEL_PRESETS: Record<LlmProviderId, readonly string[]> = {
   moonshot: ["kimi-k2.5"],
   gemini: ["gemini-3.1-flash-lite-preview", "gemini-3-flash-preview"],
   openai: ["gpt-4o-mini", "gpt-4o"],
-  mimo: ["mimo-v2-omni", "mimo-v2-flash", "mimo-v2-pro"],
+  mimo: [
+    "mimo-v2.5",
+    "mimo-v2.5-pro",
+    "mimo-v2-omni",
+    "mimo-v2-flash",
+    "mimo-v2-pro",
+  ],
 };
 
 export interface ResolvedLlmEnv {
@@ -27,7 +33,7 @@ const GEMINI_DEFAULT_MODEL = "gemini-3.1-flash-lite-preview";
 
 /** 小米 MiMo OpenAI 兼容接口，见 https://platform.xiaomimimo.com/ */
 const MIMO_DEFAULT_BASE = "https://api.xiaomimimo.com/v1";
-const MIMO_DEFAULT_MODEL = "mimo-v2-omni";
+const MIMO_DEFAULT_MODEL = "mimo-v2.5";
 
 function pickMoonshot(): ResolveLlmResult {
   const moonshotKey = process.env.MOONSHOT_API_KEY?.trim();
